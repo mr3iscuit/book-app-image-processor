@@ -1,0 +1,33 @@
+name: Build Go Binary
+
+on:
+  push:    # runs on any branch push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.5"
+
+      - name: Set binary name
+        id: vars
+        run: |
+          BRANCH_NAME="${GITHUB_REF_NAME}"
+          COMMIT_HASH="$(git rev-parse --short HEAD)"
+          echo "BINARY_NAME=book-app-image-processor-${BRANCH_NAME}-${COMMIT_HASH}" >> $GITHUB_ENV
+
+      - name: Build
+        run: go build -o "$BINARY_NAME" ./main.go
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.BINARY_NAME }}
+          path: ${{ env.BINARY_NAME }}
