@@ -23,9 +23,13 @@ jobs:
 
       - name: Build
         run: go build -o book-app-image-processor ./main.go
-      - name: Create Release
+
+      - name: Create or update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: book-app-image-processor
+          overwrite: true   # 👈 overwrite existing release assets if needed
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
