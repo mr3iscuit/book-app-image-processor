@@ -31,5 +31,3 @@ jobs:
           overwrite: true   # 👈 overwrite existing release assets if needed
           draft: false
           prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
