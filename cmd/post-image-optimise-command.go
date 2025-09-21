@@ -158,7 +158,7 @@ func init() {
 	flags.String(
 		"result-file",
 		"",
-		"Path to file for JSON result output",
+		"Directory to file for JSON result output",
 	)
 
 	flags.String(

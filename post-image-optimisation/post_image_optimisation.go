@@ -176,7 +176,7 @@ func createOptimizedVersions(
 	thumbnailSize string,
 	mediumSize string,
 	largeSize string,
-) ([]string, *CustomError.CustomError) {
+) (map[string]string, *CustomError.CustomError) {
 	if err := os.MkdirAll(
 		Constants.OptimizedPath,
 		Constants.OptimizedDirPermissions,
@@ -187,59 +187,78 @@ func createOptimizedVersions(
 		)
 	}
 
-	versions := []struct {
-		name    string
-		size    string
-		quality string
-	}{
-		{"thumbnail", thumbnailSize, Constants.MediumQuality},
-		{"medium", mediumSize, Constants.MediumQuality},
-		{"large", largeSize, Constants.LowQuality},
-	}
+	mediumOutputPath := fmt.Sprintf(
+		"%s/%s_%s.jpg",
+		Constants.OptimizedPath,
+		baseName,
+		"medium",
+	)
 
-	var processedFiles []string
+	largeOutputPath := fmt.Sprintf(
+		"%s/%s_%s.jpg",
+		Constants.OptimizedPath,
+		baseName,
+		"large",
+	)
 
-	for _, version := range versions {
-		outputPath := fmt.Sprintf(
-			"%s/%s_%s.jpg",
-			Constants.OptimizedPath,
-			baseName,
-			version.name,
-		)
+	thumbnailOutputPath := fmt.Sprintf(
+		"%s/%s_%s.jpg",
+		Constants.OptimizedPath,
+		baseName,
+		"thumbnail",
+	)
 
-		if err := createOptimizedVersionWithFFmpeg(
-			localFilePath,
-			outputPath,
-			version.size,
-			version.quality,
-		); err != nil {
-			log.Printf(
-				"Failed to create %s version: %v",
-				version.name,
-				err,
-			)
-			continue
-		}
-
-		processedFiles = append(
-			processedFiles,
-			outputPath,
-		)
+	// Medium quality
+	if err := createOptimizedVersionWithFFmpeg(
+		localFilePath,
+		mediumOutputPath,
+		mediumSize,
+		Constants.MediumQuality,
+	); err != nil {
 		log.Printf(
-			"Created %s version: %s",
-			version.name,
-			version.size,
+			"Failed to create medium version: %v",
+			err,
 		)
 	}
 
-	return processedFiles, nil
+	// Large quality
+	if err := createOptimizedVersionWithFFmpeg(
+		localFilePath,
+		largeOutputPath,
+		largeSize,
+		Constants.HighQuality,
+	); err != nil {
+		log.Printf(
+			"Failed to create large version: %v",
+			err,
+		)
+	}
+
+	// Thumbnail
+	if err := createOptimizedVersionWithFFmpeg(
+		localFilePath,
+		thumbnailOutputPath,
+		thumbnailSize,
+		Constants.HighQuality,
+	); err != nil {
+		log.Printf(
+			"Failed to create thumbnail version: %v",
+			err,
+		)
+	}
+
+	return map[string]string{
+		"medium":    mediumOutputPath,
+		"large":     largeOutputPath,
+		"thumbnail": thumbnailOutputPath,
+	}, nil
 }
 
 func uploadOptimizedVersions(
 	minioClient *minio.Client,
 	object string,
 	bucket string,
-	processedFiles []string,
+	processedFiles map[string]string,
 ) ([]string, *CustomError.CustomError) {
 	baseName := strings.TrimSuffix(
 		object,
